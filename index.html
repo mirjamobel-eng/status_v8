@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#123444">
+<title>Vare optælling</title>
+<style>
+:root {
+  --roed: #C10B25;
+  --blaa: #123444;
+  --hvid: #FFFFFF;
+  --graa: #7A8288;
+  --lys: #EEF1F3;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  margin: 0;
+  background: var(--hvid);
+  color: var(--blaa);
+  -webkit-tap-highlight-color: transparent;
+}
+
+header {
+  background: var(--blaa);
+  color: var(--hvid);
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  border-bottom: 4px solid var(--roed);
+}
+header h1 { margin: 0; font-size: 20px; letter-spacing: 0.5px; }
+
+main { max-width: 600px; margin: 0 auto; padding: 16px; }
+
+.side { display: none; }
+.side.aktiv { display: block; }
+
+label { display: block; font-weight: bold; margin: 12px 0 4px; }
+
+input {
+  font-size: 18px;
+  padding: 14px;
+  width: 100%;
+  border: 2px solid var(--blaa);
+  border-radius: 8px;
+  color: var(--blaa);
+  background: var(--hvid);
+}
+input:focus { outline: none; border-color: var(--roed); }
+
+button {
+  font-size: 18px;
+  font-weight: bold;
+  padding: 14px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--hvid);
+}
+button:active { opacity: 0.8; }
+
+.knap-roed { background: var(--roed); }
+.knap-blaa { background: var(--blaa); }
+.knap-graa { background: var(--graa); }
+
+.fejl { color: var(--roed); font-weight: bold; min-height: 1.2em; margin: 8px 0; }
+
+/* ---------- Side 1 ---------- */
+#scanner {
+  width: 100%;
+  min-height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--blaa);
+  border: 3px solid var(--blaa);
+}
+#scanner video { display: block; width: 100% !important; }
+.scan-tekst { text-align: center; font-size: 14px; color: var(--graa); margin: 6px 0 4px; }
+
+.soeg-raekke { display: flex; gap: 8px; }
+.soeg-raekke input { flex: 1; }
+.soeg-raekke button { width: auto; padding: 14px 20px; }
+
+details {
+  margin-top: 20px;
+  border: 2px solid var(--blaa);
+  border-radius: 8px;
+  overflow: hidden;
+}
+summary {
+  background: var(--blaa);
+  color: var(--hvid);
+  padding: 14px;
+  font-weight: bold;
+  font-size: 18px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "▾"; transition: transform 0.2s; }
+details[open] summary::after { transform: rotate(180deg); }
+.status-indhold { padding: 12px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { background: var(--lys); text-align: left; }
+td, th { border-bottom: 1px solid #d5dbe0; padding: 8px 6px; }
+td.slet { width: 1%; }
+td.slet button {
+  width: auto; padding: 4px 10px; font-size: 14px; background: var(--roed);
+}
+.tom { color: var(--graa); text-align: center; padding: 12px; }
+.status-knapper { display: flex; gap: 8px; margin-top: 12px; }
+.status-knapper button { font-size: 15px; }
+.status-knapper .ryd { flex: 1; }
+.status-knapper .send { flex: 2; }
+
+/* ---------- Side 2 ---------- */
+.info {
+  background: var(--lys);
+  border-left: 5px solid var(--roed);
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+.info .nummer { font-size: 22px; font-weight: bold; }
+.info .navn { font-size: 16px; margin-top: 4px; }
+
+.antal-label { text-align: center; font-size: 32px; margin: 16px 0 12px; }
+
+.antal-felt {
+  display: block;
+  width: min(70vw, 280px);
+  aspect-ratio: 1 / 1;
+  height: auto;
+  margin: 0 auto;
+  font-size: 72px;
+  font-weight: bold;
+  text-align: center;
+  border-width: 3px;
+  border-radius: 16px;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.antal-felt::-webkit-outer-spin-button,
+.antal-felt::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ---------- Side 3 ---------- */
+.ny-vare-knap { margin-top: 12px; }
+.side-titel { text-align: center; font-size: 26px; margin: 4px 0 12px; }
+.ny-nummer { text-align: center; color: var(--graa); margin: 0 0 8px; }
+.ny-nummer b { color: var(--blaa); letter-spacing: 1px; }
+
+.knap-raekke { display: flex; gap: 12px; margin-top: 20px; }
+.knap-raekke button { flex: 1; padding: 18px; }
+</style>
+</head>
+<body>
+
+<header><h1>Vare optælling</h1></header>
+
+<main>
+
+<!-- ============ SIDE 1: Scan / søg ============ -->
+<div id="side-soeg" class="side aktiv">
+  <div id="scanner"></div>
+  <p class="scan-tekst">Hold stregkoden vandret inden for rammen</p>
+
+  <label for="varenummer">Eller skriv varenummer:</label>
+  <div class="soeg-raekke">
+    <input id="varenummer" type="text" inputmode="numeric" placeholder="Varenummer"
+           onkeydown="if (event.key === 'Enter') soeg()">
+    <button class="knap-roed" onclick="soeg()">Søg</button>
+  </div>
+  <p class="fejl" id="soegFejl"></p>
+
+  <details>
+    <summary>Status <span id="antalLinjer"></span></summary>
+    <div class="status-indhold">
+      <table>
+        <thead><tr><th>Varenr.</th><th>Beskrivelse</th><th>Antal</th><th></th></tr></thead>
+        <tbody id="tabel"></tbody>
+      </table>
+      <div class="status-knapper">
+        <button class="knap-graa ryd" onclick="rydArk()">Ryd</button>
+        <button class="knap-roed send" onclick="sendMail()">Send som mail</button>
+      </div>
+    </div>
+  </details>
+
+  <button class="knap-blaa ny-vare-knap" onclick="visSide('ny')">Ny vare</button>
+</div>
+
+<!-- ============ SIDE 2: Indtast antal ============ -->
+<div id="side-antal" class="side">
+  <div class="info">
+    <div class="nummer" id="valgtNummer"></div>
+    <div class="navn" id="valgtNavn"></div>
+  </div>
+
+  <label for="antal" class="antal-label">Antal</label>
+  <input id="antal" class="antal-felt" type="number" inputmode="numeric" step="1" min="0"
+         onkeydown="if (event.key === 'Enter') anvend()">
+  <p class="fejl" id="antalFejl" style="text-align:center"></p>
+
+  <div class="knap-raekke">
+    <button class="knap-graa" onclick="visSide('soeg')">Tilbage</button>
+    <button class="knap-roed" onclick="anvend()">Anvend</button>
+  </div>
+</div>
+
+<!-- ============ SIDE 3: Ny vare (findes ikke i varelisten) ============ -->
+<div id="side-ny" class="side">
+  <h2 class="side-titel">Ny vare</h2>
+  <p class="ny-nummer">Får varenummer <b id="nytNummer"></b></p>
+
+  <label for="nyBeskrivelse">Beskrivelse</label>
+  <input id="nyBeskrivelse" type="text" placeholder="Fx Ketchup 1kg"
+         onkeydown="if (event.key === 'Enter') document.getElementById('nyAntal').focus()">
+
+  <label for="nyAntal" class="antal-label">Antal</label>
+  <input id="nyAntal" class="antal-felt" type="number" inputmode="numeric" step="1" min="0"
+         onkeydown="if (event.key === 'Enter') gemNyVare()">
+  <p class="fejl" id="nyFejl" style="text-align:center"></p>
+
+  <div class="knap-raekke">
+    <button class="knap-graa" onclick="visSide('soeg')">Tilbage</button>
+    <button class="knap-roed" onclick="gemNyVare()">Tilføj</button>
+  </div>
+</div>
+
+</main>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+let varer = {};          // varenummer -> beskrivelse
+let valgtVare = null;    // den vare der er søgt frem
+let scanner = null;      // stregkode-scanneren
+let scannerKoerer = false;
+let scannerSkift = Promise.resolve(); // sikrer at start/stop ikke overlapper
+
+// 1. Læs vare_liste.csv (semikolon-separeret, ingen overskrift nødvendig)
+//    Virker både med UTF-8 og med Excels standard (Windows-tegnsæt), så æøå vises rigtigt
+fetch("vare_liste.csv")
+  .then(svar => svar.arrayBuffer())
+  .then(bytes => {
+    let tekst;
+    try { tekst = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+    catch { tekst = new TextDecoder("windows-1252").decode(bytes); }
+    tekst = tekst.replace(/^﻿/, "");
+
+    for (let linje of tekst.split(/\r?\n/)) {
+      if (linje.trim() === "") continue;
+      let [nummer, navn] = delCsvLinje(linje);
+      nummer = (nummer || "").trim();
+      if (nummer === "" || nummer.toLowerCase().startsWith("varen")) continue; // evt. overskrift
+      varer[nummer] = (navn || "").trim();
+    }
+  })
+  .catch(() => {
+    document.getElementById("soegFejl").textContent =
+      "Kunne ikke læse vare_liste.csv (åbn siden via en webserver / GitHub Pages).";
+  });
+
+// Del en CSV-linje ved semikolon - håndterer felter i anførselstegn, fx "Mayonnaise ""Real"" 2L"
+function delCsvLinje(linje) {
+  let felter = [], felt = "", iCitat = false;
+  for (let i = 0; i < linje.length; i++) {
+    let c = linje[i];
+    if (iCitat) {
+      if (c === '"' && linje[i + 1] === '"') { felt += '"'; i++; }
+      else if (c === '"') iCitat = false;
+      else felt += c;
+    } else if (c === '"') iCitat = true;
+    else if (c === ";") { felter.push(felt); felt = ""; }
+    else felt += c;
+  }
+  felter.push(felt);
+  return felter;
+}
+
+// 2. Skift mellem side 1 (søg), side 2 (antal) og side 3 (ny vare)
+function visSide(navn) {
+  document.getElementById("side-soeg").classList.toggle("aktiv", navn === "soeg");
+  document.getElementById("side-antal").classList.toggle("aktiv", navn === "antal");
+  document.getElementById("side-ny").classList.toggle("aktiv", navn === "ny");
+  window.scrollTo(0, 0);
+  if (navn === "soeg") {
+    document.getElementById("varenummer").value = "";
+    document.getElementById("soegFejl").textContent = "";
+    visTabel();
+    startScanner();
+  } else if (navn === "antal") {
+    stopScanner();
+    document.getElementById("antal").value = "";
+    document.getElementById("antalFejl").textContent = "";
+    document.getElementById("antal").focus();
+  } else if (navn === "ny") {
+    stopScanner();
+    document.getElementById("nytNummer").textContent = naesteBogstavNummer();
+    document.getElementById("nyBeskrivelse").value = "";
+    document.getElementById("nyAntal").value = "";
+    document.getElementById("nyFejl").textContent = "";
+    document.getElementById("nyBeskrivelse").focus();
+  }
+}
+
+// 3. Søg efter varenummer
+function soeg() {
+  let nummer = document.getElementById("varenummer").value.trim();
+  let fejl = document.getElementById("soegFejl");
+  fejl.textContent = "";
+
+  if (nummer === "") {
+    fejl.textContent = "Skriv et varenummer.";
+    return;
+  }
+  if (!(nummer in varer)) {
+    fejl.textContent = "Varenummer " + nummer + " findes ikke i varelisten.";
+    return;
+  }
+
+  valgtVare = { nummer: nummer, navn: varer[nummer] };
+  document.getElementById("valgtNummer").textContent = valgtVare.nummer;
+  document.getElementById("valgtNavn").textContent = valgtVare.navn;
+  visSide("antal");
+}
+
+// 4. Anvend: gem linjen i status
+function anvend() {
+  let tekst = document.getElementById("antal").value.trim();
+  let fejl = document.getElementById("antalFejl");
+
+  if (!/^\d+$/.test(tekst)) {
+    fejl.textContent = "Antal skal være et helt tal.";
+    return;
+  }
+
+  let data = hentData();
+  data.push({ nummer: valgtVare.nummer, navn: valgtVare.navn, antal: parseInt(tekst, 10) });
+  localStorage.setItem("ark2", JSON.stringify(data));
+  visSide("soeg");
+}
+
+// 4b. Ny vare: varer der ikke findes i varelisten får et varenummer i bogstaver
+//     aaaaaaa, aaaaaab, ... aaaaaaz, aaaaaba, ...
+function naesteBogstavNummer() {
+  let hoejeste = -1;
+  for (let r of hentData()) {
+    if (/^[a-z]{7}$/.test(r.nummer)) {
+      let tal = 0;
+      for (let c of r.nummer) tal = tal * 26 + (c.charCodeAt(0) - 97);
+      if (tal > hoejeste) hoejeste = tal;
+    }
+  }
+  let tal = hoejeste + 1, nummer = "";
+  for (let i = 0; i < 7; i++) {
+    nummer = String.fromCharCode(97 + (tal % 26)) + nummer;
+    tal = Math.floor(tal / 26);
+  }
+  return nummer;
+}
+
+function gemNyVare() {
+  let beskrivelse = document.getElementById("nyBeskrivelse").value.trim();
+  let tekst = document.getElementById("nyAntal").value.trim();
+  let fejl = document.getElementById("nyFejl");
+
+  if (beskrivelse === "") {
+    fejl.textContent = "Skriv en beskrivelse.";
+    return;
+  }
+  if (!/^\d+$/.test(tekst)) {
+    fejl.textContent = "Antal skal være et helt tal.";
+    return;
+  }
+
+  let data = hentData();
+  data.push({ nummer: naesteBogstavNummer(), navn: beskrivelse, antal: parseInt(tekst, 10) });
+  localStorage.setItem("ark2", JSON.stringify(data));
+  visSide("soeg");
+}
+
+// 5. Lokal lagring
+function hentData() {
+  try { return JSON.parse(localStorage.getItem("ark2") || "[]"); }
+  catch { return []; }
+}
+
+function escape(t) {
+  return String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function visTabel() {
+  let data = hentData();
+  let tabel = document.getElementById("tabel");
+  document.getElementById("antalLinjer").textContent = "(" + data.length + ")";
+  if (data.length === 0) {
+    tabel.innerHTML = `<tr><td colspan="4" class="tom">Ingen linjer endnu</td></tr>`;
+    return;
+  }
+  tabel.innerHTML = "";
+  data.forEach((r, i) => {
+    tabel.innerHTML += `<tr><td>${escape(r.nummer)}</td><td>${escape(r.navn)}</td>` +
+      `<td>${escape(r.antal)}</td><td class="slet"><button onclick="sletLinje(${i})">✕</button></td></tr>`;
+  });
+}
+
+function sletLinje(i) {
+  let data = hentData();
+  data.splice(i, 1);
+  localStorage.setItem("ark2", JSON.stringify(data));
+  visTabel();
+}
+
+function rydArk() {
+  if (confirm("Vil du slette alle linjer i status?")) {
+    localStorage.removeItem("ark2");
+    visTabel();
+  }
+}
+
+// Sæt anførselstegn om et felt, hvis det indeholder ; " eller linjeskift
+function csvFelt(t) {
+  t = String(t);
+  return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+
+// 6. Send status som CSV via telefonens del-menu (Mail, Outlook osv.)
+//    CSV med semikolon, så Excel på dansk åbner den korrekt
+async function sendMail() {
+  let data = hentData();
+  if (data.length === 0) {
+    alert("Der er ingen linjer i status at sende.");
+    return;
+  }
+
+  let csv = "varenummer;beskrivelse;antal\n";
+  for (let r of data) {
+    csv += `${csvFelt(r.nummer)};${csvFelt(r.navn)};${r.antal}\n`;
+  }
+
+  let dato = new Date().toISOString().slice(0, 10);   // fx 2026-11-18
+  let filnavn = "status_" + dato + ".csv";
+  let fil = new File(["﻿" + csv], filnavn, { type: "text/csv" }); // BOM så æøå vises rigtigt
+
+  // Kan enheden dele filer? (iPhone/Android)
+  if (navigator.canShare && navigator.canShare({ files: [fil] })) {
+    try {
+      await navigator.share({
+        files: [fil],
+        title: "Vare optælling " + dato,
+        text: "Vare optælling " + dato + " (" + data.length + " linjer) - se vedhæftet fil."
+      });
+    } catch (err) {
+      if (err.name !== "AbortError") {      // AbortError = brugeren lukkede del-menuen
+        alert("Kunne ikke dele filen: " + err.message);
+      }
+    }
+    return;
+  }
+
+  // Reserveløsning (fx pc-browser uden fildeling): download filen i stedet
+  alert("Denne enhed kan ikke dele filer direkte. Filen downloades i stedet, så du kan vedhæfte den manuelt.");
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(fil);
+  link.download = filnavn;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+// 7. Stregkode-scanner (kamera) - starter automatisk på side 1
+function startScanner() {
+  if (typeof Html5Qrcode === "undefined") {
+    document.getElementById("soegFejl").textContent = "Scanner-biblioteket kunne ikke indlæses.";
+    return;
+  }
+  scannerSkift = scannerSkift.then(() => {
+    if (scannerKoerer) return;
+    // Kun 1D-stregkoder (lange og smalle) - hurtigere og færre fejllæsninger
+    let F = Html5QrcodeSupportedFormats;
+    scanner = scanner || new Html5Qrcode("scanner", {
+      formatsToSupport: [F.CODE_128, F.CODE_39, F.CODE_93, F.EAN_13, F.EAN_8, F.ITF],
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      verbose: false
+    });
+    let sidsteKode = null;
+    return scanner.start(
+      { facingMode: "environment" },          // bagkamera
+      {
+        fps: 15,
+        aspectRatio: 1.7778,                  // bredt billede (16:9)
+        // Scanfelt: bredt og lavt, som stregkoderne (ca. 7:1)
+        qrbox: (b, h) => {
+          let bredde = Math.floor(b * 0.9);
+          let hoejde = Math.min(Math.floor(bredde / 4), Math.floor(h * 0.6));
+          return { width: bredde, height: Math.max(hoejde, 50) };
+        }
+      },
+      kode => {                                // kode fundet
+        if (!scannerKoerer) return;
+        // Kræv samme kode to gange i træk for at undgå fejllæsninger
+        if (kode !== sidsteKode) { sidsteKode = kode; return; }
+        sidsteKode = null;
+        document.getElementById("varenummer").value = kode;
+        soeg();
+      }
+    ).then(() => { scannerKoerer = true; })
+     .catch(err => {
+        document.getElementById("soegFejl").textContent = "Kunne ikke starte kamera: " + err;
+     });
+  });
+}
+
+function stopScanner() {
+  scannerSkift = scannerSkift.then(() => {
+    if (!scanner || !scannerKoerer) return;
+    scannerKoerer = false;
+    return scanner.stop().catch(() => {});
+  });
+}
+
+visTabel();
+startScanner();
+</script>
+</body>
+</html>
